@@ -161,24 +161,24 @@ install_packages() {
     esac
 }
 
-# Function to disable firewall
-configure_firewall() {
-    case $1 in
-        "ubuntu"|"debian")
-            if command -v ufw &> /dev/null; then
-                systemctl disable --now ufw
-                ufw disable
-                echo "UFW firewall disabled successfully"
-            fi
-            ;;
-        "centos"|"rhel"|"rocky"|"alma"|"almalinux"|"fedora")
-            if command -v firewall-cmd &> /dev/null; then
-                systemctl disable --now firewalld
-                echo "FirewallD disabled successfully"
-            fi
-            ;;
-    esac
-}
+# # Function to disable firewall
+# configure_firewall() {
+#     case $1 in
+#         "ubuntu"|"debian")
+#             if command -v ufw &> /dev/null; then
+#                 systemctl disable --now ufw
+#                 ufw disable
+#                 echo "UFW firewall disabled successfully"
+#             fi
+#             ;;
+#         "centos"|"rhel"|"rocky"|"alma"|"almalinux"|"fedora")
+#             if command -v firewall-cmd &> /dev/null; then
+#                 systemctl disable --now firewalld
+#                 echo "FirewallD disabled successfully"
+#             fi
+#             ;;
+#     esac
+# }
 
 # Get user inputs
 read -p "Enter hostname                : " HOSTNAME

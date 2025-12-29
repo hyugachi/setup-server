@@ -17,74 +17,32 @@ get_distro() {
     fi
 }
 
-# Function to get distribution-specific plugins
-get_plugins() {
-    local common_plugins="colored-man-pages colorize common-aliases git sudo zsh-syntax-highlighting zsh-autosuggestions"
-    
-    case $1 in
-        "ubuntu"|"debian")
-            echo "$common_plugins systemd debian"
-            ;;
-        "centos"|"rhel"|"rocky"|"alma"|"almalinux")
-            echo "$common_plugins yum dnf systemd"
-            ;;
-        "fedora")
-            echo "$common_plugins dnf systemd"
-            ;;
-        "opensuse"*)
-            echo "$common_plugins zypper systemd"
-            ;;
-        "arch"|"manjaro")
-            echo "$common_plugins archlinux pacman systemd"
-            ;;
-        *)
-            echo "$common_plugins"
-            ;;
-    esac
-}
-
 # Function to create .zshrc file
 create_zshrc() {
     local user_home="$1"
-    local plugins="$2"
     
-    cat > "$user_home"/.zshrc << EOF
-# Enable Powerlevel10k instant prompt
-if [[ -r "\${XDG_CACHE_HOME:-\$HOME/.cache}/p10k-instant-prompt-\${(%):-%n}.zsh" ]]; then
-  source "\${XDG_CACHE_HOME:-\$HOME/.cache}/p10k-instant-prompt-\${(%):-%n}.zsh"
-fi
+    cat > "$user_home"/.zshrc << 'EOF'
+# Basic ZSH configuration
+HISTFILE=~/.zsh_history
+HISTSIZE=10000
+SAVEHIST=10000
+setopt SHARE_HISTORY
+setopt HIST_IGNORE_DUPS
+setopt HIST_IGNORE_SPACE
 
-# Path to oh-my-zsh
-export ZSH="\$HOME/.oh-my-zsh"
+# Enable completion
+autoload -Uz compinit
+compinit
 
-# Theme
-ZSH_THEME="powerlevel10k/powerlevel10k"
-
-# Disable updates
-DISABLE_AUTO_UPDATE="true"
-DISABLE_UPDATE_PROMPT="true"
-
-# Enable command auto-correction
-ENABLE_CORRECTION="true"
-
-# Display red dots whilst waiting for completion
-COMPLETION_WAITING_DOTS="true"
-
-# Plugins
-plugins=($plugins)
-
-# Source oh-my-zsh
-source \$ZSH/oh-my-zsh.sh
-
-# User configuration
+# Environment variables
 export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 
-# Load aliases
-source ~/.zsh_aliases
+# Basic prompt
+PROMPT='%F{green}%n@%m%f:%F{blue}%~%f%# '
 
-# Load Powerlevel10k theme
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+# Load aliases
+[[ -f ~/.zsh_aliases ]] && source ~/.zsh_aliases
 EOF
 }
 
@@ -234,39 +192,16 @@ sed -i 's/^#\?PubkeyAuthentication.*/PubkeyAuthentication yes/' /etc/ssh/sshd_co
 sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config
 
 # Disable firewall
-configure_firewall "$DISTRO"
+# configure_firewall "$DISTRO"
 
-# Install Oh My Zsh
+# Configure ZSH for root and user
 for user_home in /root /home/"$USERNAME"; do
-    if [ ! -d "$user_home/.oh-my-zsh" ]; then
-        if [ "$user_home" = "/root" ]; then
-            sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
-        else
-            sudo -u "$USERNAME" sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
-        fi
-    fi
-
-    # Install plugins
-    mkdir -p "$user_home/.oh-my-zsh/custom/plugins"
-    for plugin in zsh-syntax-highlighting zsh-autosuggestions; do
-        if [ ! -d "$user_home/.oh-my-zsh/custom/plugins/$plugin" ]; then
-            git clone --depth=1 "https://github.com/zsh-users/$plugin.git" "$user_home/.oh-my-zsh/custom/plugins/$plugin"
-        fi
-    done
-
-    # Install powerlevel10k theme
-    if [ ! -d "$user_home/.oh-my-zsh/custom/themes/powerlevel10k" ]; then
-        git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$user_home/.oh-my-zsh/custom/themes/powerlevel10k"
-    fi
-
     # Create zshrc and aliases
-    PLUGINS=$(get_plugins "$DISTRO")
-    create_zshrc "$user_home" "$PLUGINS"
+    create_zshrc "$user_home"
     create_aliases "$user_home"
 
     # Set proper ownership
     if [ "$user_home" = "/home/$USERNAME" ]; then
-        chown -R "$USERNAME":"$USERNAME" "$user_home/.oh-my-zsh"
         chown "$USERNAME":"$USERNAME" "$user_home/.zshrc" "$user_home/.zsh_aliases"
     fi
 done
